@@ -3,7 +3,7 @@ resource "digitalocean_droplet" "node_builder" {
     image = "ubuntu-20-04-x64"
     name = "${terraform.workspace}-safe-node-builder"
     region = "lon1"
-    size = "s-8vcpu-16gb"
+    size = var.build-size
     private_networking = true
     ssh_keys = var.ssh_keys
 
@@ -17,7 +17,9 @@ resource "digitalocean_droplet" "node_builder" {
 
     provisioner "remote-exec" {
         inline = [
-            "apt -qq update",
+           "apt-get update",
+            "apt-get install build-essential -y",
+            # "bash",
             <<-EOT
                 while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1 ; do
                     sleep 1
@@ -37,7 +39,11 @@ resource "digitalocean_droplet" "node_builder" {
                     done
                 fi
             EOT
-            ,
+        ]
+    }
+    provisioner "remote-exec" {
+        inline = [
+        
             "git clone https://github.com/${var.repo_owner}/safe_network -q",
             "cd safe_network",
             "git checkout ${var.commit_hash}",
